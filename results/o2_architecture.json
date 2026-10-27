@@ -1,0 +1,46 @@
+{
+  "esp32_code": {
+    "compiler": "xtensa-esp32-elf-gcc",
+    "sections": {
+      "literal": 272,
+      "text": 2668,
+      "rodata": 52,
+      "bss": 2052
+    },
+    "flash_bytes": 2992,
+    "static_ram_bytes": 2052
+  },
+  "ram_budget_bytes": {
+    "Sensor queue Core 0 -> Core 1 (512 samples)": 10240,
+    "Window buffer (256 x 7 float)": 7168,
+    "Detector state (mean, scale, co-moment, Cholesky, 31 features)": 8612,
+    "Core 1 task stack (window copy + FFT scratch)": 12288,
+    "Core 0 task stack": 4096,
+    "Static tables (FFT twiddles, Hann window)": 2052
+  },
+  "ram_total_bytes": 44456,
+  "esp32_sram_bytes": 532480,
+  "ram_share_of_esp32_sram_pct": 8.348858173076923,
+  "learned_model_bytes": 7952,
+  "data_rates_bytes_per_s": [
+    [
+      "MPU6050 raw stream (14 B x 1 kHz)",
+      14000.0
+    ],
+    [
+      "Base paper UART link capacity (9600 baud, 8N1)",
+      960.0
+    ],
+    [
+      "I2C capacity at 400 kHz (9 bits per byte)",
+      44444.444444444445
+    ],
+    [
+      "Edge to cloud after local processing (~120 B JSON per 128 ms decision)",
+      937.5
+    ]
+  ],
+  "i2c_read_us": 385.0,
+  "i2c_core0_load_at_1khz_pct": 38.5,
+  "uplink_reduction_x": 14.933333333333334
+}

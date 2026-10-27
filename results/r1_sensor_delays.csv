@@ -1,0 +1,57 @@
+set,fault,median,missed,n
+all 6 sensors (Mahalanobis),bearing,40.576019287109375,0,4
+all 6 sensors (Mahalanobis),cooling,64.32000732421875,0,4
+all 6 sensors (Mahalanobis),humidity,96.32000732421875,0,4
+all 6 sensors (Mahalanobis),imbalance,34.688018798828125,0,4
+all 6 sensors (Mahalanobis),looseness,114.81597900390625,0,4
+all 6 sensors (Mahalanobis),misalignment,58.623992919921875,0,4
+all 6 sensors (Mahalanobis),overload,39.167999267578125,0,4
+all 6 sensors (Z-score),bearing,30.720001220703125,0,4
+all 6 sensors (Z-score),cooling,263.6159973144531,0,4
+all 6 sensors (Z-score),humidity,236.35198974609375,0,4
+all 6 sensors (Z-score),imbalance,48.704010009765625,0,4
+all 6 sensors (Z-score),looseness,109.69598388671875,0,4
+all 6 sensors (Z-score),misalignment,50.4320068359375,0,4
+all 6 sensors (Z-score),overload,69.82400512695312,0,4
+current,bearing,488.70404052734375,2,4
+current,cooling,,4,4
+current,humidity,,4,4
+current,imbalance,,4,4
+current,looseness,,4,4
+current,misalignment,,4,4
+current,overload,128.89599609375,0,4
+humidity,bearing,,4,4
+humidity,cooling,,4,4
+humidity,humidity,44.287994384765625,0,4
+humidity,imbalance,,4,4
+humidity,looseness,,4,4
+humidity,misalignment,,4,4
+humidity,overload,,4,4
+rpm,bearing,,4,4
+rpm,cooling,,4,4
+rpm,humidity,,4,4
+rpm,imbalance,,4,4
+rpm,looseness,,4,4
+rpm,misalignment,,4,4
+rpm,overload,24.063995361328125,0,4
+sound,bearing,109.24801635742188,0,4
+sound,cooling,,4,4
+sound,humidity,,4,4
+sound,imbalance,81.66400146484375,0,4
+sound,looseness,404.864013671875,0,4
+sound,misalignment,382.2720031738281,0,4
+sound,overload,65.9840087890625,0,4
+temperature,bearing,203.3280029296875,0,4
+temperature,cooling,99.7760009765625,0,4
+temperature,humidity,,4,4
+temperature,imbalance,,4,4
+temperature,looseness,,4,4
+temperature,misalignment,268.35198974609375,0,4
+temperature,overload,117.12002563476562,0,4
+vibration,bearing,30.720001220703125,0,4
+vibration,cooling,,4,4
+vibration,humidity,,4,4
+vibration,imbalance,48.1920166015625,0,4
+vibration,looseness,101.24798583984375,0,4
+vibration,misalignment,42.4320068359375,0,4
+vibration,overload,151.29598999023438,0,4

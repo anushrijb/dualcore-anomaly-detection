@@ -1,0 +1,139 @@
+{
+  "params": {
+    "temperature": {
+      "center": 1.3989637086765705,
+      "cols": [
+        9,
+        10
+      ],
+      "kind": 0
+    },
+    "humidity": {
+      "center": 2.0675331619278285,
+      "cols": [
+        11
+      ],
+      "kind": 0
+    },
+    "rpm": {
+      "center": 2.5155583663761654,
+      "cols": [
+        12
+      ],
+      "kind": 0
+    },
+    "current": {
+      "center": 3.2138887426608083,
+      "cols": [
+        13,
+        14
+      ],
+      "kind": 0
+    },
+    "sound": {
+      "center": 3.405578898931497,
+      "cols": [
+        15,
+        16,
+        17
+      ],
+      "kind": 0
+    },
+    "vibration": {
+      "center": 2.753202994998342,
+      "cols": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "kind": 0
+    },
+    "all 6 sensors (Z-score)": {
+      "center": 2.38065695226162,
+      "cols": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "kind": 0
+    },
+    "all 6 sensors (Mahalanobis)": {
+      "center": 2.5748659180610516,
+      "cols": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "kind": 1
+    }
+  },
+  "feature_names": [
+    "vib_ax_rms",
+    "vib_ay_rms",
+    "vib_az_rms",
+    "vib_ax_kurt",
+    "vib_ax_crest",
+    "vib_gx_rms",
+    "vib_band_lo",
+    "vib_band_mid",
+    "vib_band_hi",
+    "temp_motor",
+    "temp_ambient",
+    "humidity",
+    "rpm_ratio",
+    "current_mean",
+    "current_ripple",
+    "sound_db",
+    "sound_centroid_khz",
+    "sound_hf_ratio"
+  ],
+  "diagnosis": {
+    "accuracy": 1.0,
+    "n": 71224,
+    "per_fault": {
+      "imbalance": 1.0,
+      "bearing": 1.0,
+      "misalignment": 1.0,
+      "looseness": 1.0,
+      "overload": 1.0,
+      "cooling": 1.0,
+      "humidity": 1.0
+    }
+  }
+}

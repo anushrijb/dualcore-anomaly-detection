@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vibration Edge AI Dashboard</title>
+<style>
+:root{--bg:#f4f3ef;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#8a887f;--grid:#e4e3df;
+--vib:#2a78d6;--temp:#eb6834;--sim:#1baf7a;--bad:#e34948;--learn:#6250d6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121211;--surface:#1a1a19;--ink:#f0efec;
+--ink2:#c3c2b7;--muted:#8f8d84;--grid:#2c2b29;--vib:#3987e5;--temp:#d95926;--sim:#199e70;--bad:#e66767;--learn:#9085e9}}
+:root[data-theme="dark"]{--bg:#121211;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#8f8d84;--grid:#2c2b29;
+--vib:#3987e5;--temp:#d95926;--sim:#199e70;--bad:#e66767;--learn:#9085e9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header,main{max-width:1100px;margin:auto;padding:16px 16px 0}
+h1{font-size:20px;margin:0}.sub{color:var(--ink2);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.card{background:var(--surface);border:1px solid var(--grid);border-radius:10px;padding:12px 14px;cursor:pointer}
+.card.sel{outline:2px solid var(--vib)}.card h3{margin:0 0 2px;font-size:15px}
+.badge{display:inline-flex;gap:6px;align-items:center;font-weight:600;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--grid)}
+.dot{width:8px;height:8px;border-radius:50%}
+.kv{display:flex;justify-content:space-between;color:var(--ink2);font-size:12px;margin-top:6px}.kv b{color:var(--ink);font-size:15px}
+.panel{background:var(--surface);border:1px solid var(--grid);border-radius:10px;padding:12px 14px;margin-top:12px}
+.panel h2{font-size:14px;margin:0 0 6px}svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--ink2);font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}.sw{width:14px;height:3px;border-radius:2px}
+#tip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--grid);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--grid)}th{color:var(--ink2)}
+footer{max-width:1100px;margin:auto;padding:12px 16px 28px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vibration Edge AI Dashboard</h1>
+  <div class="sub">ESP32 dual-core edge nodes (Core 0: sensors at 1 kHz · Core 1: features + one-class model) → fog gateway → cloud database. Four replayed machines + SIM-01, the live Tkinter simulator board</div>
+</header>
+<main>
+  <div class="cards" id="cards"></div>
+  <div class="panel"><h2 id="t1">Vibration</h2>
+    <div class="legend"><span><i class="sw" style="background:var(--vib)"></i>Radial vibration RMS (mg)</span><span><i class="sw" style="background:var(--learn)"></i>On-device learning</span></div>
+    <svg id="vibChart" viewBox="0 0 1000 190"></svg></div>
+  <div class="panel"><h2>Case temperature (MPU6050 on-die sensor)</h2>
+    <div class="legend"><span><i class="sw" style="background:var(--temp)"></i>Temperature (°C)</span><span id="ambLeg" style="display:none"><i class="sw" style="background:var(--ink2)"></i>Ambient, DHT22 (°C)</span></div>
+    <svg id="tempChart" viewBox="0 0 1000 160"></svg></div>
+  <div class="panel"><h2>Edge AI similarity</h2>
+    <div class="legend"><span><i class="sw" style="background:var(--sim)"></i>Similarity (%)</span><span><i class="sw" style="background:var(--bad)"></i>Anomaly decision</span><span>dashed = 90 % threshold</span></div>
+    <svg id="simChart" viewBox="0 0 1000 170"></svg></div>
+  <div class="panel" id="speedPanel" style="display:none"><h2>Motor speed set by the edge controller (L298N duty)</h2>
+    <div class="legend"><span><i class="sw" style="background:var(--vib)"></i>Speed (% duty)</span><span>warning → step down 25 % every 10 s → stop</span></div>
+    <svg id="speedChart" viewBox="0 0 1000 150"></svg></div>
+  <div class="panel"><h2>Alarm log (fog gateway, debounced: 3 consecutive anomalous windows)</h2><table id="events"></table></div>
+</main>
+<footer id="foot"></footer>
+<div id="tip"></div>
+<script>
+const EMBED = window.__EMBEDDED__ || null;
+let selected = null, TMAX = 1500;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+async function J(u){ return (await fetch(u)).json(); }
+async function getFleet(){ return EMBED ? EMBED.fleet : J('api/fleet'); }
+async function getSeries(id){ return EMBED ? EMBED.series[id] : J('api/series?device='+encodeURIComponent(id)); }
+async function getEvents(){ return EMBED ? EMBED.events : J('api/events'); }
+function statusOf(d){
+  if(!d.latest) return ['Waiting','var(--muted)'];
+  if(d.state===3) return ['Stopped','var(--bad)'];
+  if(d.latest==='LEARNING') return ['Learning','var(--learn)'];
+  if(d.latest==='ANOMALY') return ['Anomaly','var(--bad)'];
+  return ['Normal','var(--sim)'];
+}
+function cards(fleet){
+  const c=document.getElementById('cards'); c.innerHTML='';
+  fleet.forEach(d=>{
+    const [lab,col]=statusOf(d), el=document.createElement('div');
+    el.className='card'+(d.device===selected?' sel':'');
+    el.innerHTML=`<h3>${d.device}</h3><div class="sub">${d.site} · ${d.note}</div>
+      <div style="margin-top:6px"><span class="badge"><i class="dot" style="background:${col}"></i>${lab}</span></div>
+      <div class="kv"><span>Vibration<br><b>${d.vib_mg!=null?d.vib_mg.toFixed(1)+' mg':'–'}</b></span>
+      <span>Temp<br><b>${d.temp_c!=null?d.temp_c.toFixed(1)+' °C':'–'}</b></span>
+      <span>Similarity<br><b>${d.sim!=null&&d.sim>=0?d.sim+' %':'–'}</b></span></div>`+
+      (d.duty!=null?`<div class="kv"><span>Speed<br><b>${Math.round(d.duty*100)} %</b></span><span>Controller<br><b>${['Normal','Warning','Derated','Stopped'][d.state]||'–'}</b></span><span></span></div>`+
+      `<div class="kv"><span>Room (DHT22)<br><b>${d.t_amb!=null?d.t_amb.toFixed(1)+' °C · '+d.rh.toFixed(0)+' %RH':'–'}</b></span></div>`:'');
+    el.onclick=()=>{selected=d.device;refresh();};
+    c.appendChild(el);
+  });
+}
+function chart(svg, rows, opt){
+  const W=1000,H=+svg.getAttribute('viewBox').split(' ')[3],L=50,R=30,T=8,B=24;
+  svg.innerHTML=''; if(!rows.length) return;
+  const x0=0, x1=Math.max(opt.tmax, rows[rows.length-1].t);
+  const X=t=>L+(t-x0)/(x1-x0||1)*(W-L-R), Y=v=>T+(1-(v-opt.ymin)/(opt.ymax-opt.ymin))*(H-T-B);
+  let s='';
+  for(let i=0;i<=4;i++){const v=opt.ymin+i*(opt.ymax-opt.ymin)/4;
+    s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--grid')}"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="${css('--ink2')}">${v.toFixed(opt.dec)}</text>`;}
+  for(let i=0;i<=5;i++){const t=x0+i*(x1-x0)/5; s+=`<text x="${X(t)}" y="${H-6}" text-anchor="middle" font-size="11" fill="${css('--ink2')}">${(t/60).toFixed(0)} min</text>`;}
+  const ln=rows.filter(r=>r.mode==='learn'); if(ln.length) s+=`<rect x="${X(0)}" y="${T}" width="${X(ln[ln.length-1].t)-X(0)}" height="${H-T-B}" fill="${css('--learn')}" opacity="0.10"/>`;
+  s+=opt.draw(X,Y);
+  s+=`<line id="xh" y1="${T}" y2="${H-B}" stroke="${css('--ink2')}" stroke-dasharray="3 3" visibility="hidden"/><rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/>`;
+  svg.innerHTML=s;
+  const tip=document.getElementById('tip'), xh=svg.querySelector('#xh'), hit=svg.querySelector('.hit');
+  hit.onmousemove=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());
+    const t=x0+(q.x-L)/(W-L-R)*(x1-x0); let b=rows[0]; for(const r of rows) if(Math.abs(r.t-t)<Math.abs(b.t-t)) b=r;
+    xh.setAttribute('x1',X(b.t));xh.setAttribute('x2',X(b.t));xh.setAttribute('visibility','visible');
+    tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';
+    tip.innerHTML=`<b>t = ${(b.t/60).toFixed(2)} min</b><br>vibration ${b.vib.toFixed(1)} mg · ${b.temp.toFixed(2)} °C<br>`+(b.mode==='learn'?'on-device learning':`similarity <b>${b.sim}%</b> · ${b.anom?'ANOMALY':'normal'}`);};
+  hit.onmouseleave=()=>{tip.style.display='none';xh.setAttribute('visibility','hidden');};
+}
+function draw(rows){
+  TMAX = rows.some(r=>r.duty!=null) ? 600 : 1500;   // live Wokwi/ESP32 node: 10-minute axis that grows
+  const line=(X,Y,k)=>rows.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+Y(r[k]).toFixed(1)).join('');
+  const vmax=Math.max(...rows.map(r=>r.vib))*1.1;
+  chart(document.getElementById('vibChart'),rows,{tmax:TMAX,ymin:0,ymax:Math.max(60,vmax),dec:0,draw:(X,Y)=>`<path d="${line(X,Y,'vib')}" fill="none" stroke="${css('--vib')}" stroke-width="1.5"/>`});
+  const amb=rows.some(r=>r.t_amb!=null);
+  document.getElementById('ambLeg').style.display=amb?'inline-flex':'none';
+  const tv=rows.map(r=>r.temp).concat(amb?rows.map(r=>r.t_amb):[]);
+  let tmn=Math.floor(Math.min(...tv)-0.5), tmx=Math.ceil(Math.max(...tv)+0.5);
+  if(tmx-tmn<4){tmn-=2;tmx+=2;}
+  chart(document.getElementById('tempChart'),rows,{tmax:TMAX,ymin:tmn,ymax:tmx,dec:(tmx-tmn)%4===0?0:1,draw:(X,Y)=>`<path d="${line(X,Y,'temp')}" fill="none" stroke="${css('--temp')}" stroke-width="1.8"/>`+
+    (amb?`<path d="${line(X,Y,'t_amb')}" fill="none" stroke="${css('--ink2')}" stroke-width="1.4" stroke-dasharray="5 3"/>`:'')});
+  const inf=rows.filter(r=>r.mode==='infer');
+  chart(document.getElementById('simChart'),rows,{tmax:TMAX,ymin:0,ymax:100,dec:0,draw:(X,Y)=>
+    `<line x1="${X(0)}" x2="${X(Math.max(TMAX,rows[rows.length-1].t))}" y1="${Y(90)}" y2="${Y(90)}" stroke="${css('--ink2')}" stroke-dasharray="6 4"/>`+
+    `<path d="${inf.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+Y(r.sim).toFixed(1)).join('')}" fill="none" stroke="${css('--sim')}" stroke-width="1.5"/>`+
+    inf.filter(r=>r.anom).filter((r,i)=>i%3===0).map(r=>`<circle cx="${X(r.t)}" cy="${Y(r.sim)}" r="2.5" fill="${css('--bad')}"/>`).join('')});
+  const sp=rows.filter(r=>r.duty!=null);
+  document.getElementById('speedPanel').style.display=sp.length?'block':'none';
+  if(sp.length) chart(document.getElementById('speedChart'),sp,{tmax:TMAX,ymin:0,ymax:100,dec:0,draw:(X,Y)=>
+    `<path d="${sp.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+Y(100*r.duty).toFixed(1)).join('')}" fill="none" stroke="${css('--vib')}" stroke-width="2"/>`});
+}
+async function refresh(){
+  const fleet=await getFleet();
+  if(!selected&&fleet.length) selected=(fleet.find(d=>d.latest==='ANOMALY')||fleet[0]).device;
+  cards(fleet);
+  if(!fleet.length){
+    document.getElementById('cards').innerHTML='<div class="card"><h3>Waiting for devices…</h3><div class="sub">No data yet. In --ingest mode, start a real ESP32 node (esp32/sample_project); it appears here within a second of its first packet.</div></div>';
+    document.getElementById('t1').textContent='Vibration';
+    ['vibChart','tempChart','simChart'].forEach(id=>document.getElementById(id).innerHTML='');
+    document.getElementById('events').innerHTML='<tr><td>No alarms yet</td></tr>';
+    return;
+  }
+  const rows=await getSeries(selected);
+  document.getElementById('t1').textContent='Vibration · '+selected;
+  draw(rows);
+  const ev=await getEvents();
+  document.getElementById('events').innerHTML='<tr><th>Device</th><th>Alarm at</th><th>Similarity at alarm</th></tr>'+
+    (ev.length?ev.map(e=>`<tr><td>${e.device}</td><td>${(e.t/60).toFixed(2)} min</td><td>${e.sim} %</td></tr>`).join(''):'<tr><td colspan="3">No alarms yet</td></tr>');
+  document.getElementById('foot').textContent=EMBED?'Snapshot of a simulated 25-minute run.':'Live from the fog gateway: four replayed machines plus any live board (the Tkinter simulator or a real ESP32) sending to /api/ingest; updates every second.';
+}
+refresh(); if(!EMBED) setInterval(refresh,1000);
+</script>
+</body>
+</html>

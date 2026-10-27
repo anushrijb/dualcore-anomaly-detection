@@ -1,0 +1,47 @@
+{
+  "params": {
+    "base_temp_zsm": {
+      "center": 5.688658389788961,
+      "sens": 1.5,
+      "calib_balanced_accuracy": 87.20734680961954
+    },
+    "vib_zsm": {
+      "center": 2.798411428637293,
+      "sens": 3.0,
+      "calib_balanced_accuracy": 96.9010779701661
+    },
+    "vib_maha": {
+      "center": 2.813073540284559,
+      "sens": 3.0,
+      "calib_balanced_accuracy": 97.89869492541524
+    }
+  },
+  "test_sessions": 31,
+  "calib_sessions": 13,
+  "overall_delay": [
+    {
+      "method": "base_temp_zsm",
+      "median": 312.0,
+      "missed": 4,
+      "n": 25
+    },
+    {
+      "method": "static_50C",
+      "median": 542.0,
+      "missed": 22,
+      "n": 25
+    },
+    {
+      "method": "vib_maha",
+      "median": 85.21600000000001,
+      "missed": 0,
+      "n": 25
+    },
+    {
+      "method": "vib_zsm",
+      "median": 99.03999999999996,
+      "missed": 0,
+      "n": 25
+    }
+  ]
+}

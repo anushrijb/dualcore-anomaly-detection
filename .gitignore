@@ -1,0 +1,15 @@
+# build outputs (recreated automatically)
+build/
+__pycache__/
+*.pyc
+*.so
+*.o
+# local environments and databases
+venv/
+.venv/
+*.db
+*.sqlite
+# editor / OS files
+.vscode/
+.DS_Store
+Thumbs.db
