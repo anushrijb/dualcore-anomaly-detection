@@ -1,8 +1,5 @@
 # Dual-Core Real-Time Anomaly Detection with IoT Sensors
 
-**Arlene Maria Saju, Anushri Jyothi Bhasu** — Dept. of Computer Science and Engineering, Vellore Institute of Technology  
-**Guide:** Dr. Yokesh Babu S, Associate Professor, SCOPE, VIT
-
 Edge AI motor monitoring on a **dual-core ESP32**: Core 0 reads six IoT sensors at 1 kHz without losing a
 single sample, Core 1 runs a one-class anomaly model learned on the device and protects the motor
 (warn → slow down → stop). A fog tier analyses a whole fleet in parallel with OpenMP, and a live dashboard
@@ -25,12 +22,6 @@ Anomaly Detection System for Predictive Motor Maintenance*, JCSSE 2026.
 | Fog speed-up on uneven work (2 threads) | 1.08× (static) | **1.83×** (dynamic) |
 
 All sensors are simulated at register level; the C code, threads, OpenMP kernels and timings are real.
-
-## Run the demo (2 terminals)
-
-```bash
-python ui/fog_server.py                     # terminal 1, then open http://localhost:8060
-python simulator/board_tk.py --speed 2      # terminal 2: the simulator appears on the dashboard as SIM-01
 ```
 
 ## Quick start (Ubuntu / WSL)
@@ -43,16 +34,7 @@ python run_all.py                 # ~20 min on 2 cores (includes 5 min of real-t
 python run_all.py --quick         # ~10 min
 python ui/fog_server.py           # live dashboard at http://localhost:8060
 python tests/test_edge_equivalence.py
-```
-
-The results are in `results/RESULTS.md`, `results/figures/` and `results/dashboard_snapshot.html`,
-which opens in a browser without a server.
-
-The OpenMP figures depend on your CPU. Run `python run_all.py` on the laptop you present from, so
-the thread-scaling plot uses all of its cores.
-
-Optional: if `xtensa-esp32-elf-gcc` (ESP-IDF toolchain) is installed, the edge code is
-cross-compiled for the ESP32 and its real flash size is reported.
+'''
 
 ## Where each objective is implemented
 
@@ -64,8 +46,6 @@ cross-compiled for the ESP32 and its real flash size is reported.
 | 3 Parallelization: fog/cloud (TLP, schedule, chunk, DLP, ILP) | `csrc/fleet_omp.c`, `py/exp_fleet.py` | `o3_fleet_*.png/.csv`, `o3_dlp_ilp.png` |
 | 3 UI, edge/fog/cloud split | `ui/fog_server.py`, `ui/dashboard.html` | dashboard |
 | 4 Performance metrics | `py/exp_detection.py`, `py/methods.py` | `o4_detection_*.csv`, `o4_detection_delay.png` |
-
-## Review 1 remarks (professor's first review)
 
 | Remark | Where | Output |
 |---|---|---|
